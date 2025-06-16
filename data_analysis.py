@@ -51,12 +51,7 @@ def analyze_data(args):
         df["climate"] = df["climate"].astype(int)
 
 
-    # 6) Exploratory Data Analysis
-
-    # Summary statistics for key numeric columns
-    print("\n=== Summary Statistics for GDP per Capita ===")
-    print(df["gdp_per_capita"].describe(), "\n")
-    print(f"Median GDP per Capita: {df['gdp_per_capita'].median()}\n")
+    # 6) Data Analysis
 
     # Total population per region
     pop_by_region = df.groupby("region")["population"].sum().sort_values(ascending=False)
@@ -65,8 +60,13 @@ def analyze_data(args):
 
     # Mean and median GDP per region
     gdp_by_region = df.groupby("region")["gdp_per_capita"].agg(["mean", "median"]).sort_values("mean", ascending=False)
-    print("\n=== GDP per Capita by Region (mean & median) ===")
+    print("\n=== GDP per Capita by Region (medocker exec -it mysql-dev mysql -u root -p -e an & median) ===")
     print(gdp_by_region, "\n")
+
+    # Literacy rate mean and median per region
+    literacy_by_region = df.groupby("region")["literacy"].agg(["mean", "median"]).sort_values("mean", ascending=False)
+    print("\n=== Literacy Rate by Region (mean & median) ===")
+    print(literacy_by_region, "\n")
 
     # Top / bottom 3 countries by GDP per capita per region
     for region, group in df.groupby("region"):
