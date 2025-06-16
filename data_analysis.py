@@ -34,11 +34,11 @@ def analyze_data(args):
         sys.exit(1)
 
     # 4) Inspect the raw data
-    print("\n=== DataFrame information (values and their types): ===\n")
+    print("\n=== DataFrame information (values and their types): ===")
     print(df.info(), "\n")
-    print("\n=== Values missing per column ===\n")
+    print("\n=== Values missing per column ===")
     print(df.isna().sum(), "\n")
-    print("\n=== First 6 rows ===\n")
+    print("\n=== First 6 rows ===")
     print(df.head(n=6), "\n")
 
     # 5) Data cleaning
@@ -50,7 +50,62 @@ def analyze_data(args):
     if "climate" in df.columns:
         df["climate"] = df["climate"].astype(int)
 
-    # 6) Save cleaned data
+
+    # 6) Exploratory Data Analysis
+
+    # Summary statistics for key numeric columns
+    print("\n=== Summary Statistics for GDP per Capita ===")
+    print(df["gdp_per_capita"].describe(), "\n")
+    print(f"Median GDP per Capita: {df['gdp_per_capita'].median()}\n")
+
+    # Total population per region
+    pop_by_region = df.groupby("region")["population"].sum().sort_values(ascending=False)
+    print("\n=== Total Population by Region ===")
+    print(pop_by_region, "\n")
+
+    # Mean and median GDP per region
+    gdp_by_region = df.groupby("region")["gdp_per_capita"].agg(["mean", "median"]).sort_values("mean", ascending=False)
+    print("\n=== GDP per Capita by Region (mean & median) ===")
+    print(gdp_by_region, "\n")
+
+    # Top / bottom 3 countries by GDP per capita per region
+    for region, group in df.groupby("region"):
+        print(f"\n=== Top 3 GDP per Capita in {region} ===")
+        top3 = group.nlargest(3, "gdp_per_capita")[["country", "gdp_per_capita"]]
+        print(top3.to_string(index=False))
+
+        print(f"\n=== Bottom 3 GDP per Capita in {region} ===")
+        bot3 = group.nsmallest(3, "gdp_per_capita")[["country", "gdp_per_capita"]]
+        print(bot3.to_string(index=False))
+
+
+    # 7) Validation Checks via Analysis
+
+    # 7a) Check for duplicate country names
+    duplicates = df[df.duplicated(subset=["country"], keep=False)]
+    if not duplicates.empty:
+        print("WARNING: Duplicate country entries found:")
+        print(duplicates[["country"]].drop_duplicates(), "\n")
+    else:
+        print("\nNo duplicate country entries.\n")
+
+    # 7b) Check for negative or zero population
+    neg_pop = df[df["population"] <= 0]
+    if not neg_pop.empty:
+        print("WARNING: Countries with non-positive population:")
+        print(neg_pop[["country", "population"]], "\n")
+    else:
+        print("\nAll countries have positive population.\n")
+
+    # 7c) Check for GDP per capita outside expected range (e.g., >200k USD)
+    outliers = df[df["gdp_per_capita"] > 200_000]
+    if not outliers.empty:
+        print("WARNING: Countries with extremely high GDP per capita:")
+        print(outliers[["country", "gdp_per_capita"]], "\n")
+    else:
+        print("\nNo extreme GDP outliers found.\n")
+
+    # 8) Save cleaned data
     output_path = "data/countries_cleaned.csv"
     df.to_csv(output_path, index=False)
     print(f"\nCleaned data saved to {output_path}")
