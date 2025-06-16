@@ -5,12 +5,26 @@ INSERT INTO region_analysis (
 )
 SELECT
   region,
-  SUM(population)         AS total_population,
-  AVG(gdp_per_capita)     AS mean_gdp,
-  PERCENTILE_CONT(0.5)
-    WITHIN GROUP (ORDER BY gdp_per_capita) AS median_gdp,
-  AVG(literacy)           AS mean_literacy,
-  PERCENTILE_CONT(0.5)
-    WITHIN GROUP (ORDER BY literacy)       AS median_literacy
+  SUM(population) AS total_population,
+  AVG(gdp_per_capita) AS mean_gdp,
+  (
+    SELECT AVG(val) FROM (
+      SELECT gdp_per_capita AS val,
+             ROW_NUMBER() OVER (PARTITION BY region ORDER BY gdp_per_capita)         AS rn,
+             COUNT(*)       OVER (PARTITION BY region)                            AS cnt
+      FROM countries
+    ) t
+    WHERE rn IN (FLOOR((cnt+1)/2), CEIL((cnt+1)/2))
+  ) AS median_gdp,
+  AVG(literacy) AS mean_literacy,
+  (
+    SELECT AVG(val) FROM (
+      SELECT literacy AS val,
+             ROW_NUMBER() OVER (PARTITION BY region ORDER BY literacy)             AS rn,
+             COUNT(*)       OVER (PARTITION BY region)                            AS cnt
+      FROM countries
+    ) t
+    WHERE rn IN (FLOOR((cnt+1)/2), CEIL((cnt+1)/2))
+  ) AS median_literacy
 FROM countries
 GROUP BY region;
